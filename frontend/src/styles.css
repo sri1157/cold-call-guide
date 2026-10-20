@@ -1,0 +1,247 @@
+/* Call guide. One idea carries the design: the call as a line of eight stops.
+   Marigold marks the line and the current stop only; everything else stays quiet,
+   because the caller reads this in two-second glances while someone talks. */
+
+:root {
+  --paper: #eef1f4;
+  --surface: #ffffff;
+  --ink: #1c2740;
+  --muted: #5d6779;
+  --rule: #d5dbe3;
+  --line: #e0a21b;
+  --line-soft: #f6e3b4;
+  --flag: #a3264f;
+  --flag-soft: #f8e6ec;
+  --ok: #2f6b4f;
+  --sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --voice: 'Literata', Georgia, serif; /* the prospect's voice */
+  --r: 10px;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.5 var(--sans);
+}
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--line); outline-offset: 2px; }
+h1, h2 { margin: 0; line-height: 1.15; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  padding: 12px 24px; background: var(--ink); color: #fff;
+}
+.brand { font-weight: 700; }
+.topbar nav { display: flex; gap: 4px; }
+.topbar nav a {
+  color: #c9d1de; text-decoration: none; padding: 6px 12px; border-radius: 999px;
+}
+.topbar nav a[aria-current='page'] { background: #fff; color: var(--ink); }
+.server { margin-left: auto; font-size: 14px; color: #c9d1de; display: flex; align-items: center; gap: 8px; }
+.server::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #8a94a6; }
+.server-up::before { background: #5cc48e; }
+.server-down::before { background: #e5728f; }
+.server-waking::before { background: var(--line); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* ---------- shared controls ---------- */
+.primary, .button, .end, .flag button, .link {
+  border: 0; border-radius: 999px; padding: 12px 22px; cursor: pointer; font-weight: 700;
+  text-decoration: none; display: inline-block;
+}
+.primary { background: var(--ink); color: #fff; }
+.primary:disabled { opacity: .6; cursor: wait; }
+.button { background: var(--surface); border: 1px solid var(--rule); color: var(--ink); }
+.end { background: transparent; border: 1px solid var(--rule); color: var(--muted); }
+.primary.end { background: var(--flag); color: #fff; border-color: var(--flag); }
+.link { background: none; padding: 0; color: var(--ink); text-decoration: underline; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.error { color: var(--flag); background: var(--flag-soft); padding: 10px 14px; border-radius: var(--r); }
+
+label { display: block; font-weight: 700; font-size: 15px; }
+input, textarea {
+  display: block; width: 100%; margin-top: 6px; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: var(--r); background: var(--surface); font-weight: 400;
+}
+fieldset { border: 0; padding: 0; margin: 20px 0 0; }
+legend { font-weight: 700; font-size: 15px; margin-bottom: 8px; padding: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips legend { width: 100%; }
+.chips button {
+  border: 1px solid var(--rule); background: var(--surface); border-radius: 999px;
+  padding: 9px 16px; cursor: pointer;
+}
+.chips button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* a two-way switch: one joined track, so it can't be mistaken for buttons around it */
+.seg-track {
+  display: inline-flex; padding: 4px; gap: 4px; border-radius: 999px;
+  background: var(--paper); border: 1px solid var(--rule);
+}
+.segmented .seg-track label { border: 0; background: transparent; padding: 8px 18px; }
+.segmented .seg-track label.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(28, 39, 64, .18); font-weight: 700; }
+.segmented label, .outcomes label {
+  position: relative;
+  font-weight: 400; border: 1px solid var(--rule); background: var(--surface);
+  border-radius: 999px; padding: 9px 16px; cursor: pointer;
+}
+.outcomes label.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+/* Radios stay in the label for keyboard focus, but must not stretch the page. */
+.segmented input, .outcomes input {
+  position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  opacity: 0; pointer-events: none;
+}
+.segmented label:has(input:focus-visible), .outcomes label:has(input:focus-visible) { outline: 3px solid var(--line); }
+
+/* ---------- start ---------- */
+.start { max-width: 30rem; margin: 48px auto; padding: 0 16px; }
+.start h1 { font-size: 34px; margin-bottom: 24px; }
+.start form > label { margin-bottom: 16px; }
+.start .primary { display: block; width: 100%; margin-top: 32px; padding: 14px 22px; font-size: 18px; }
+
+/* ---------- the call ---------- */
+.call {
+  display: grid; grid-template-columns: 230px minmax(0, 46rem); gap: 0 40px;
+  max-width: 1120px; margin: 0 auto; padding: 24px;
+}
+.who {
+  grid-column: 1 / -1; display: flex; align-items: baseline; gap: 16px;
+  padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--rule);
+}
+.who strong { font-size: 22px; margin-right: 10px; }
+.who span { color: var(--muted); }
+.who .kind { margin-left: auto; }
+.who time { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* the line */
+.rail { position: relative; }
+.rail ol { list-style: none; margin: 0; padding: 0; }
+.stop { position: relative; }
+.stop::before { /* the segment down to the next stop */
+  content: ''; position: absolute; left: 11px; top: 30px; bottom: -6px; width: 4px;
+  background: var(--rule); border-radius: 2px;
+}
+.stop:last-child::before { display: none; }
+.stop.done::before, .stop.current::before { background: var(--line); }
+.stop.current::before { background: linear-gradient(var(--line), var(--rule)); }
+.stop button {
+  display: grid; grid-template-columns: 26px 1fr; column-gap: 12px; align-items: center;
+  width: 100%; text-align: left; background: none; border: 0; padding: 8px 0 18px; cursor: pointer;
+}
+.dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface); border: 4px solid var(--rule); position: relative; z-index: 1;
+}
+.done .dot { background: var(--line); border-color: var(--line); }
+.current .dot { border-color: var(--line); box-shadow: 0 0 0 5px var(--line-soft); }
+.stop-name { font-weight: 700; }
+.ahead .stop-name { color: var(--muted); font-weight: 400; }
+.stop.skip .dot { background: var(--paper); border-color: var(--rule); }
+.stop.skip .stop-name { color: var(--rule); font-weight: 400; }
+.stop.skip button { cursor: default; }
+.stop.skip::before,
+.stop.before-skip::before { background: var(--rule); }
+
+/* the stage card */
+.stage {
+  background: var(--surface); border-radius: 16px; padding: 32px 36px 36px;
+  border-top: 6px solid var(--line);
+}
+.stage-count { margin: 0 0 4px; color: var(--muted); font-size: 15px; }
+.stage h1 { font-size: 44px; letter-spacing: -.01em; }
+.for { font-size: 19px; margin: 10px 0 0; max-width: 38em; }
+
+.maysay { margin-top: 24px; }
+.maysay h2, .closed h2 { font-size: 15px; color: var(--muted); font-weight: 700; }
+.maysay ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.maysay li {
+  font: italic 400 19px/1.45 var(--voice); padding: 8px 0 8px 18px;
+  border-left: 3px solid var(--line-soft);
+}
+.maysay li + li { margin-top: 6px; }
+
+.tip {
+  margin: 16px 0 0; padding: 10px 14px; background: var(--paper); border-radius: var(--r); font-size: 15px;
+}
+
+.words { margin-top: 20px; }
+.words textarea { font: italic 400 18px/1.45 var(--voice); resize: vertical; }
+.stage.key .words textarea { border: 2px solid var(--line); background: #fffdf6; }
+
+.nextstep label, .nextstep .row { margin-top: 16px; }
+.nextstep .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.reached { margin: 20px 0 0; }
+.outcomes { display: flex; flex-wrap: wrap; gap: 8px; }
+.outcomes legend { width: 100%; }
+
+/* after saving */
+.closed { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--rule); }
+.summary { font-size: 18px; margin: 8px 0 0; }
+.ok { color: var(--ok); margin: 12px 0 0; }
+.flag {
+  margin-top: 14px; padding: 14px 16px; border-radius: var(--r);
+  background: var(--flag-soft); border-left: 4px solid var(--flag);
+}
+.flag p { margin: 0 0 10px; }
+.flag button { background: var(--flag); color: #fff; padding: 9px 16px; }
+.flag .source { display: block; margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+/* ---------- past calls ---------- */
+.past { max-width: 60rem; margin: 0 auto; padding: 32px 24px 64px; }
+.past h1 { font-size: 34px; }
+
+.endings { margin: 20px 0 28px; padding: 20px 24px; background: var(--surface); border-radius: 16px; }
+.endings p { margin: 0 0 16px; }
+.endings ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; }
+.endings li { display: grid; grid-template-rows: 72px auto auto; text-align: center; font-size: 13px; }
+.endings .bar { align-self: end; height: var(--h); min-height: 4px; background: var(--line); border-radius: 6px 6px 0 0; }
+.endings .n { font-weight: 700; font-size: 16px; margin-top: 4px; }
+.endings .label { color: var(--muted); }
+
+.calllist { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--rule); border-radius: 16px; overflow: hidden; }
+.calllist > li { background: var(--surface); padding: 18px 24px; }
+.calllist > li.has-flag { box-shadow: inset 4px 0 0 var(--flag); }
+.row-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+.row-head strong { margin-right: 8px; }
+.row-head span, .row-head time, .next { color: var(--muted); }
+.row-stage { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.row-stage .outcome { margin-left: auto; font-weight: 700; }
+.calllist .summary { font-size: 16px; }
+.next { margin: 4px 0 0; font-size: 15px; }
+
+.mini { display: inline-flex; gap: 3px; }
+.mini span { width: 14px; height: 6px; border-radius: 3px; background: var(--rule); }
+.mini span.on { background: var(--line); }
+
+/* ---------- narrow screens: the line turns sideways ---------- */
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .topbar { padding: 10px 16px; gap: 12px; }
+  .server { margin-left: 0; width: 100%; }
+  .call { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .who { flex-wrap: wrap; gap: 4px 12px; }
+  .who .kind { margin-left: 0; }
+  .rail { overflow-x: auto; margin: 0 -16px 16px; padding: 0 16px; }
+  .rail ol { display: flex; gap: 0; }
+  .stop { flex: 0 0 auto; }
+  .stop::before { left: 26px; right: -6px; top: 17px; bottom: auto; width: auto; height: 4px; }
+  .stop button { grid-template-columns: auto; justify-items: start; padding: 4px 14px 4px 0; }
+  .stop-name { font-size: 13px; margin-top: 4px; }
+  .stage { padding: 22px 18px 24px; }
+  .stage h1 { font-size: 34px; }
+  .nextstep .row { grid-template-columns: 1fr; }
+  .endings ol { gap: 4px; }
+  .endings .label { font-size: 11px; }
+  .row-stage .outcome { margin-left: 0; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .server-waking::before { animation: none; }
+}
