@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { STAGES } from '../stages.js';
 
-export default function StageRail({ current, reached, skipped = [], onJump }) {
+export default function StageRail({ current, visited, path, onJump }) {
   const ref = useRef(null);
   // On a phone the line runs sideways; keep the current stop in view.
   useEffect(() => {
@@ -18,15 +18,12 @@ export default function StageRail({ current, reached, skipped = [], onJump }) {
     <nav className="rail" aria-label="Call stages" ref={ref}>
       <ol>
         {STAGES.map((s) => {
-          const skip = skipped.includes(s.n);
-          const state = skip ? 'skip' : s.n === current ? 'current' : s.n <= reached ? 'done' : 'ahead';
+          const state = s.n === current ? 'current' : visited.has(s.n) ? 'done' : 'ahead';
+          // Stages off this call's path (the middle ones on a follow-up) stay visible but quiet.
+          const off = !path.includes(s.n) && s.n !== current ? ' off' : '';
           return (
-            <li key={s.n} className={`stop ${state}${skipped.includes(s.n + 1) ? ' before-skip' : ''}`}>
-              <button
-                onClick={() => { if (!skip) onJump(s.n); }}
-                aria-current={s.n === current ? 'step' : undefined}
-                aria-disabled={skip || undefined}
-              >
+            <li key={s.n} className={`stop ${state}${off}`}>
+              <button onClick={() => onJump(s.n)} aria-current={s.n === current ? 'step' : undefined}>
                 <span className="dot" aria-hidden="true" />
                 <span className="stop-name">{s.name}</span>
               </button>

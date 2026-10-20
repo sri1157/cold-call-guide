@@ -1,35 +1,32 @@
 // What each stage shows on screen. Everything here comes from reading the 100 transcripts
 // (see ANALYSIS.md): the "they may say" lines are real prospect lines, lightly shortened,
 // and the counts are how many of the 100 calls ended at that stage.
+//
+// Tap options:
+//   single: true  on a stage -> only one answer at a time
+//   solo: true    on a tap   -> picking it clears the others (and the others clear it)
+//   ends: '...'   on a tap   -> the call is over; the text is the End button's label
+//   goto: 7       on a tap   -> offers a jump to Next step with the channel filled in
 
 export const STAGES = [
   {
     n: 1,
     name: 'Opening',
-    single: true,
-    forWhat: 'Reach the right person and say who you are. They decide in ten seconds whether this is worth a minute.',
+    forWhat: 'Reach the right person, check they are still at {company}, and say who you are. They decide in ten seconds.',
     endedHere: 8,
     maySay: [
       'Calling from where? Who is this?',
       'Prakash Rao hasn’t had this number for 14 years.',
       'I’m driving, but go ahead.',
     ],
-    tips: [
-      'Check they are still at {company} before you say more. In 8 calls the caller pitched first and then heard the person had left.',
-      'Don’t ask “is this a good time?” yet. Say why you called first: in 38 calls that question only got “regarding what?”.',
-    ],
+    tips: ['Say why you’re calling before asking for time. “Is this a good time?” first got “regarding what?” in 38 calls.'],
+    single: true,
     taps: [
       { id: 'right_person', label: 'Right person' },
       { id: 'gatekeeper', label: 'Reception or assistant' },
-      { id: 'wrong_person', label: 'Wrong person or number', ends: true, endLabel: 'End call: wrong person', outcome: 'wrong_person' },
-      { id: 'left_company', label: 'Left the company', ends: true, endLabel: 'End call: they left', outcome: 'moved_company' },
-      { id: 'language_line', label: 'Language or bad line', ends: true, endLabel: 'End call: line or language', outcome: 'call_again' },
-    ],
-    followTaps: [
-      { id: 'reminded', label: 'Reminded them what we sent' },
-      { id: 'resend', label: 'Didn’t get it, resend', goto: 7, channel: 'whatsapp', note: 'Note where to resend', outcome: 'agreed_to_receive_report' },
-      { id: 'call_back', label: 'Call back later', goto: 7, channel: 'call', note: 'Note the call-back time', outcome: 'next_step_agreed' },
-      { id: 'left_company', label: 'Left the company', ends: true, endLabel: 'End call: they left', outcome: 'moved_company' },
+      { id: 'wrong_person', label: 'Wrong person or number', ends: 'End call: wrong person' },
+      { id: 'left_company', label: 'Left the company', ends: 'End call: they left' },
+      { id: 'language_line', label: 'Language or bad line', ends: 'End call: call again later' },
     ],
   },
   {
@@ -42,22 +39,19 @@ export const STAGES = [
       'So you’re a consulting firm? Is this about a job?',
       'Is it a paid service? How do you benefit from this?',
     ],
-    tips: [
-      'Two sentences, then stop. Prospects took the call for consulting, a job, SEO, a media house and even the bank (14 calls).',
-    ],
+    tips: ['Two sentences, then stop. 14 prospects thought we were consulting, a job, SEO or even the bank.'],
     taps: [
       { id: 'understood', label: 'Understood, go on', solo: true },
       { id: 'asked_what_we_do', label: 'Asked what we do' },
       { id: 'thought_something_else', label: 'Thought we’re something else' },
       { id: 'asked_cost', label: 'Asked about cost or our gain' },
       { id: 'asked_source', label: 'Asked where we got the number' },
-      { id: 'flat_no', label: 'No, without a reason', ends: true, solo: true, endLabel: 'End call: they said no', outcome: 'not_interested' },
+      { id: 'flat_no', label: 'No, without a reason', solo: true, ends: 'End call: they said no' },
     ],
   },
   {
     n: 3,
     name: 'Permission',
-    single: true,
     forWhat: 'Ask if they can talk now. Yes, no, or a time to call back are all good outcomes. Talking on without one is not.',
     endedHere: 6,
     maySay: [
@@ -65,12 +59,13 @@ export const STAGES = [
       'Okay, but let it be quick. I have others.',
       'Send it on WhatsApp first, I’ll see.',
     ],
-    tips: ['If they name a time, write it down and end the call. Don’t push on after “call me later”.'],
+    tips: ['If they name a time, note it and end the call. Don’t push on after “call me later”.'],
+    single: true,
     taps: [
       { id: 'yes_now', label: 'Yes, now' },
-      { id: 'call_back', label: 'Call back later', goto: 7, channel: 'call', note: 'Note the call-back time', outcome: 'next_step_agreed' },
-      { id: 'send_first', label: 'Send something first', goto: 7, channel: 'whatsapp', note: 'Note where to send it', outcome: 'agreed_to_receive_report' },
-      { id: 'no', label: 'No', ends: true, endLabel: 'End call: they said no', outcome: 'not_interested' },
+      { id: 'call_back', label: 'Call back later', goto: 7, channel: 'call', gotoLabel: 'Note the call-back time' },
+      { id: 'send_first', label: 'Send something first', goto: 7, channel: 'whatsapp', gotoLabel: 'Note what to send' },
+      { id: 'no', label: 'No', ends: 'End call: they said no' },
     ],
   },
   {
@@ -83,7 +78,7 @@ export const STAGES = [
       'We only do manufacturing, job work. No R&D team.',
       'First tell me what you guys do.',
     ],
-    tips: ['In 19 calls the caller explained Meridian before asking anything. Ask one question about their work first.'],
+    tips: ['Ask one question about their work before talking about ours. 19 callers pitched first.'],
     taps: [
       { id: 'told_us', label: 'Told us about their work' },
       { id: 'corrected_us', label: 'Corrected us' },
@@ -102,7 +97,7 @@ export const STAGES = [
       'Thankfully we are on the right track.',
       'What can you do for a company like ours?',
     ],
-    tips: ['Only 15 of 100 prospects said their need in their own words, and none of it survived in the logged outcome. Type it as they say it.'],
+    tips: ['Type it as they say it. Only 15 of 100 prospects said this, and every one of those words was lost.'],
     taps: [
       { id: 'named_goal', label: 'Named a goal' },
       { id: 'named_problem', label: 'Named a problem' },
@@ -122,14 +117,14 @@ export const STAGES = [
       'We already have consultants. The big four, globally.',
       'Why would we give you that kind of data?',
     ],
-    tips: ['This is where most calls are lost: 21 of 100. The most common reason is “I’m not the right person”. Ask who is, by name.'],
+    tips: ['Most calls are lost here (21 of 100), usually to “not the right person”. Ask who is, by name.'],
     taps: [
       { id: 'not_right_person', label: 'Not the right person' },
       { id: 'have_consultant', label: 'Already have consultants or a team' },
       { id: 'cant_share', label: 'Can’t share data' },
-      { id: 'send_writing', label: 'Send something in writing', goto: 7, channel: 'email', note: 'Note where to send it', outcome: 'agreed_to_receive_report' },
+      { id: 'send_writing', label: 'Send something in writing', goto: 7, channel: 'email', gotoLabel: 'Note what to send' },
       { id: 'no_time', label: 'No time, not now' },
-      { id: 'asked_no_more_calls', label: 'Asked not to be called again', ends: true, solo: true, endLabel: 'End call: do not call', outcome: 'do_not_call' },
+      { id: 'asked_no_more_calls', label: 'Asked not to be called again', solo: true, ends: 'End call: don’t call again' },
     ],
     words: 'Their reason, in their words',
   },
@@ -143,20 +138,16 @@ export const STAGES = [
       'Tuesday is a good day. After 2 PM.',
       'Speak to Mr. Naik, he handles our operations.',
     ],
-    tips: ['Half the calls got here, mostly to “send it on WhatsApp”. A time they name is worth more than one you propose.'],
+    tips: ['One thing, with a time or a channel. A time they name is worth more than one you propose.'],
     nextStep: true,
   },
   {
     n: 8,
     name: 'Close',
-    single: true,
     forWhat: 'End the call clearly and record what happened. The record is what the next call is built on.',
-    maySay: [
-      'Hold on one second. (The call never came back.)',
-      'Thank you, thank you. (A warm goodbye after a no is still a no.)',
-      'Okay, bye.',
-    ],
-    tips: ['41 of 100 logged outcomes didn’t match what was said. Pick the one that fits the call.'],
+    maySay: [],
+    tips: ['The outcome is suggested from your notes. Check it: 41 of 100 callers logged the wrong one.'],
+    single: true,
     taps: [
       { id: 'clean_end', label: 'Ended clearly' },
       { id: 'line_dropped', label: 'Line dropped or they hung up' },
@@ -165,6 +156,33 @@ export const STAGES = [
     close: true,
   },
 ];
+
+// A follow-up call (about 1 in 7 transcript calls) only needs three stops.
+export const FOLLOW_UP_PATH = [1, 7, 8];
+
+// The follow-up Opening, from the follow-up calls in the transcripts.
+const FOLLOW_UP_OPENING = {
+  n: 1,
+  name: 'Opening',
+  forWhat: 'Say who you are and remind them what you sent, and when.',
+  maySay: [
+    'Actually I haven’t gone through it. Allow me a day.',
+    'Can you send the mail again? I think it got lost.',
+    'I spoke to management. They’re not interested.',
+  ],
+  tips: ['Follow-ups go straight to the next step. The middle stages are there if the talk goes that way.'],
+  single: true,
+  taps: [
+    { id: 'read_it', label: 'They read it' },
+    { id: 'not_read', label: 'Got it, not read yet', goto: 7, channel: 'call', gotoLabel: 'Note when to call back' },
+    { id: 'not_received', label: 'Didn’t get it, resend', goto: 7, channel: 'email', gotoLabel: 'Note where to resend' },
+    { id: 'not_interested_now', label: 'Not interested now', ends: 'End call: not interested' },
+  ],
+};
+
+// The stage to show, given the call type.
+export const stageFor = (n, callType) => (n === 1 && callType === 'follow_up' ? FOLLOW_UP_OPENING : STAGES[n - 1]);
+export const pathFor = (callType) => (callType === 'follow_up' ? FOLLOW_UP_PATH : [1, 2, 3, 4, 5, 6, 7, 8]);
 
 export const CHANNELS = [
   { id: 'whatsapp', label: 'WhatsApp' },
@@ -191,27 +209,20 @@ export const outcomeLabel = (id) => OUTCOMES.find((o) => o.id === id)?.label || 
 
 export const channelLabel = (id) => CHANNELS.find((c) => c.id === id)?.label || id;
 
-export function tapsFor(stage, callType) {
-  if (callType === 'follow_up' && stage.followTaps) return stage.followTaps;
-  return stage.taps || [];
-}
-
-// The outcome the record already implies. An ending tap wins. A time they named
-// beats "send a document". Used to pre-select Close, and a call is not saved without one.
-export function suggestOutcome(record, step, callType = 'first') {
-  let fromTap = '';
-  let fromEnd = '';
-  for (const stage of STAGES) {
-    const chosen = record[stage.n]?.taps || [];
-    for (const tap of tapsFor(stage, callType)) {
-      if (!chosen.includes(tap.id) || !tap.outcome) continue;
-      if (tap.ends) fromEnd = tap.outcome;
-      else fromTap = tap.outcome;
-    }
-  }
-  if (fromEnd) return fromEnd;
-  if (step?.when && step.channel && step.channel !== 'referral') return 'next_step_agreed';
-  if (step?.channel === 'whatsapp' || step?.channel === 'email') return 'agreed_to_receive_report';
-  if (step?.channel) return 'next_step_agreed';
-  return fromTap;
+// Proposes an outcome from what the caller tapped, so they confirm rather than pick from scratch.
+// Most specific signal wins. Returns null when the notes don't point anywhere.
+export function suggestOutcome(record, step) {
+  const tapped = new Set(Object.values(record).flatMap((r) => r.taps || []));
+  const has = (...ids) => ids.some((id) => tapped.has(id));
+  if (has('asked_no_more_calls')) return 'do_not_call';
+  if (has('left_company')) return 'moved_company';
+  if (has('wrong_person')) return 'wrong_person';
+  if (has('language_line')) return 'call_again';
+  if (step.channel === 'referral') return 'wrong_person';
+  if (step.channel === 'call' || step.channel === 'meeting') return 'next_step_agreed';
+  if (step.channel && step.when) return 'next_step_agreed';
+  if (step.channel) return 'agreed_to_receive_report';
+  if (has('not_right_person')) return 'wrong_person';
+  if (has('flat_no', 'no', 'not_interested_now', 'have_consultant', 'all_fine', 'no_time')) return 'not_interested';
+  return null;
 }

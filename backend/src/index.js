@@ -9,7 +9,11 @@ const app = express();
 app.set('trust proxy', 1); // Render sits behind a proxy; needed for correct client IPs in rate limiting
 
 // Only the Vercel screen may call this API from a browser.
-const origins = (process.env.FRONTEND_ORIGIN || '').split(',').map((s) => s.trim()).filter(Boolean);
+// Trailing slashes and spaces are stripped, because browsers send the origin without them.
+const origins = (process.env.FRONTEND_ORIGIN || '')
+  .split(',')
+  .map((s) => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 app.use(cors({ origin: origins.includes('*') ? true : origins }));
 app.use(express.json({ limit: '50kb' }));
 

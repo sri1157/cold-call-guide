@@ -6,13 +6,14 @@ import { STAGES, OUTCOMES, channelLabel, suggestOutcome } from '../stages.js';
 import ReviewFlag from './ReviewFlag.jsx';
 
 export default function CloseStage({ call, reached, stage, here, toggleTap, step, record, pending, onDone }) {
-  const [outcome, setOutcome] = useState(() => suggestOutcome(record, step, call.call_type));
+  // Start from the outcome the notes point to; the caller confirms or changes it.
+  const suggested = suggestOutcome(record, step);
+  const [outcome, setOutcome] = useState(suggested || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
 
   async function saveCall() {
-    if (!outcome) return;
     setBusy(true);
     setError('');
     try {
@@ -28,7 +29,7 @@ export default function CloseStage({ call, reached, stage, here, toggleTap, step
 
       setResult(
         await api.closeCall(call.id, {
-          outcome,
+          outcome: outcome || 'not_logged',
           next_step_channel: step.channel || null,
           next_step_when: step.when,
           next_step_named_by: step.named_by || null,
@@ -71,7 +72,10 @@ export default function CloseStage({ call, reached, stage, here, toggleTap, step
       </fieldset>
 
       <fieldset className="outcomes">
-        <legend>Outcome</legend>
+        <legend>
+          Outcome
+          {suggested && outcome === suggested && <span className="hint"> (suggested from your notes, change it if it’s wrong)</span>}
+        </legend>
         {OUTCOMES.map((o) => (
           <label key={o.id} className={outcome === o.id ? 'on' : ''}>
             <input type="radio" name="outcome" value={o.id} checked={outcome === o.id} onChange={() => setOutcome(o.id)} />
@@ -89,11 +93,11 @@ export default function CloseStage({ call, reached, stage, here, toggleTap, step
       )}
 
       {error && <p className="error" role="alert">{error}</p>}
+      {!outcome && <p className="hint">Pick an outcome to save the call.</p>}
       <div className="actions">
         <button className="primary" onClick={saveCall} disabled={busy || !outcome}>
           {busy ? 'Saving and checking…' : 'Save call'}
         </button>
-        {!outcome && <p className="reached">Pick an outcome before saving.</p>}
       </div>
     </>
   );

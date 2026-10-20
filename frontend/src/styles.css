@@ -141,12 +141,11 @@ legend { font-weight: 700; font-size: 15px; margin-bottom: 8px; padding: 0; }
 .done .dot { background: var(--line); border-color: var(--line); }
 .current .dot { border-color: var(--line); box-shadow: 0 0 0 5px var(--line-soft); }
 .stop-name { font-weight: 700; }
+.stop.off .stop-name { color: #9aa3b2; font-weight: 400; font-size: 15px; }
+.stop.off .dot { width: 18px; height: 18px; margin-left: 4px; border-width: 3px; }
 .ahead .stop-name { color: var(--muted); font-weight: 400; }
-.stop.skip .dot { background: var(--paper); border-color: var(--rule); }
-.stop.skip .stop-name { color: var(--rule); font-weight: 400; }
-.stop.skip button { cursor: default; }
-.stop.skip::before,
-.stop.before-skip::before { background: var(--rule); }
+.stop.off::before,
+.stop:has(+ .stop.off)::before { background: var(--rule); }
 
 /* the stage card */
 .stage {
@@ -178,6 +177,8 @@ legend { font-weight: 700; font-size: 15px; margin-bottom: 8px; padding: 0; }
 .nextstep .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .reached { margin: 20px 0 0; }
+.hint { font-weight: 400; color: var(--muted); font-size: 14px; }
+p.hint { margin: 16px 0 0; }
 .outcomes { display: flex; flex-wrap: wrap; gap: 8px; }
 .outcomes legend { width: 100%; }
 

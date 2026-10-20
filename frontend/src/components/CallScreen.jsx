@@ -2,7 +2,7 @@
 // backend as the caller moves on, and lets them end the call from anywhere.
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
-import { STAGES, tapsFor } from '../stages.js';
+import { stageFor, pathFor } from '../stages.js';
 import StageRail from './StageRail.jsx';
 import NextStepFields from './NextStepFields.jsx';
 import CloseStage from './CloseStage.jsx';
@@ -10,8 +10,10 @@ import CloseStage from './CloseStage.jsx';
 const emptyStep = { channel: '', when: '', named_by: '', referral_name: '', referral_contact: '' };
 
 export default function CallScreen({ call, onDone }) {
+  const path = pathFor(call.call_type); // 8 stops for a first call, 3 for a follow-up
   const [current, setCurrent] = useState(1);
   const [reached, setReached] = useState(1);
+  const [visited, setVisited] = useState(() => new Set([1])); // stages the caller has been on
   const [record, setRecord] = useState({}); // { [stageNumber]: { taps: [], words: '' } }
   const [step, setStep] = useState(emptyStep);
   const [saveError, setSaveError] = useState('');
@@ -26,23 +28,19 @@ export default function CallScreen({ call, onDone }) {
     if (top !== undefined && top < 0) card.current.parentElement.querySelector('.rail').scrollIntoView({ block: 'start' });
   }, [current]);
 
-  const followUp = call.call_type === 'follow_up';
-  const path = followUp ? [1, 7, 8] : STAGES.map((s) => s.n);
-  const stage = STAGES[current - 1];
-  const tapDefs = tapsFor(stage, call.call_type);
+  const stage = stageFor(current, call.call_type);
   const here = record[current] || { taps: [], words: '' };
   const update = (patch) => setRecord((r) => ({ ...r, [current]: { ...here, ...patch } }));
 
+  // Tapping rules: single-choice stages keep one answer; a "solo" answer clears the others,
+  // and any other answer clears a solo one. So contradictory answers can't sit together.
   function toggleTap(id) {
-    const tap = tapDefs.find((t) => t.id === id);
-    const soloIds = tapDefs.filter((t) => t.solo).map((t) => t.id);
-    // Clicking a selected chip turns it off. An exclusive answer, or a single-choice
-    // stage, replaces the rest. A normal answer clears any exclusive one.
-    const taps = here.taps.includes(id)
-      ? here.taps.filter((t) => t !== id)
-      : stage.single || tap?.solo
-        ? [id]
-        : [...here.taps.filter((t) => !soloIds.includes(t)), id];
+    const on = here.taps.includes(id);
+    const tap = stage.taps.find((t) => t.id === id);
+    let taps;
+    if (on) taps = here.taps.filter((t) => t !== id);
+    else if (stage.single || tap?.solo) taps = [id];
+    else taps = [...here.taps.filter((t) => !stage.taps.find((x) => x.id === t)?.solo), id];
     update({ taps });
   }
 
@@ -67,15 +65,15 @@ export default function CallScreen({ call, onDone }) {
     if (preset) setStep((s) => ({ ...s, ...preset }));
     // "Reached" = furthest stage before Close. Jumping to Close doesn't count as reaching it.
     setReached((m) => Math.max(m, current === 8 ? 0 : current, n === 8 ? 0 : n));
+    setVisited((v) => new Set(v).add(n));
     setCurrent(n);
   }
 
-  const tapped = tapDefs.filter((t) => here.taps.includes(t.id));
-  const endTap = tapped.find((t) => t.ends);
+  const nextN = path.find((n) => n > current);
+  const tapped = (stage.taps || []).filter((t) => here.taps.includes(t.id));
+  const ender = tapped.find((t) => t.ends);
   const jump = tapped.find((t) => t.goto);
-  const tips = stage.tips.map((t) => t.replace('{company}', call.company || 'the company'));
-  const stepNo = path.indexOf(current);
-  const nextN = stepNo >= 0 ? path[stepNo + 1] : null;
+  const fill = (t) => t.replace('{company}', call.company || 'the company');
 
   return (
     <main className="call">
@@ -88,33 +86,28 @@ export default function CallScreen({ call, onDone }) {
         <time aria-label="Call time">{elapsed}</time>
       </section>
 
-      <StageRail
-        current={current}
-        reached={reached}
-        skipped={followUp ? [2, 3, 4, 5, 6] : []}
-        onJump={(n) => goTo(n)}
-      />
+      <StageRail current={current} visited={visited} path={path} onJump={(n) => goTo(n)} />
 
       <section ref={card} className={`stage ${stage.keyWords ? 'key' : ''}`} aria-live="polite">
-        <p className="stage-count">{followUp ? `Step ${stepNo + 1} of ${path.length}` : `Stage ${stage.n} of 8`}</p>
+        <p className="stage-count">
+          {path.includes(current) ? `Step ${path.indexOf(current) + 1} of ${path.length}` : 'Extra stage for this follow-up'}
+        </p>
         <h1>{stage.name}</h1>
-        <p className="for">{stage.forWhat}</p>
+        <p className="for">{fill(stage.forWhat)}</p>
 
-        {followUp && current === 1 && (
-          <p className="tip">Follow-up: remind them of what you sent, then agree the next step.</p>
+        {stage.maySay.length > 0 && (
+          <div className="maysay">
+            <h2>They may say</h2>
+            <ul>
+              {stage.maySay.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          </div>
         )}
 
-        <div className="maysay">
-          <h2>They may say</h2>
-          <ul>
-            {stage.maySay.map((m) => (
-              <li key={m}>{m}</li>
-            ))}
-          </ul>
-        </div>
-
-        {tips.map((t) => (
-          <p className="tip" key={t}>{t}</p>
+        {stage.tips.map((t) => (
+          <p className="tip" key={t}>{fill(t)}</p>
         ))}
 
         {stage.close ? (
@@ -136,7 +129,7 @@ export default function CallScreen({ call, onDone }) {
             ) : (
               <fieldset className="chips">
                 <legend>What happened</legend>
-                {tapDefs.map((t) => (
+                {stage.taps.map((t) => (
                   <button
                     key={t.id}
                     type="button"
@@ -163,24 +156,21 @@ export default function CallScreen({ call, onDone }) {
 
             {saveError && <p className="error" role="alert">{saveError}</p>}
 
+            {/* The main button changes with what was tapped, so the caller never has to work out what's next. */}
             <div className="actions">
-              {endTap ? (
-                <button className="primary end" onClick={() => goTo(8)}>
-                  {endTap.endLabel || 'End call here'}
+              {ender ? (
+                <button className="primary end" onClick={() => goTo(8)}>{ender.ends}</button>
+              ) : jump ? (
+                <button className="primary" onClick={() => goTo(7, { channel: jump.channel, named_by: 'them' })}>
+                  {jump.gotoLabel}
                 </button>
               ) : (
-                <>
-                  {jump ? (
-                    <button className="primary" onClick={() => goTo(jump.goto, { channel: jump.channel, named_by: 'them' })}>
-                      {jump.note || 'Note it in Next step'}
-                    </button>
-                  ) : nextN && (
-                    <button className="primary" onClick={() => goTo(nextN)}>
-                      Next: {STAGES[nextN - 1].name}
-                    </button>
-                  )}
-                  <button className="end" onClick={() => goTo(8)}>End call here</button>
-                </>
+                <button className="primary" onClick={() => goTo(nextN)}>
+                  Next: {stageFor(nextN, call.call_type).name}
+                </button>
+              )}
+              {!ender && (
+                <button className="end" onClick={() => goTo(8)}>End call here</button>
               )}
             </div>
           </>
