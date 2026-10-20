@@ -77,7 +77,7 @@ ${Object.entries(OUTCOMES).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
 Return only a JSON object:
 {"summary": string, "suggested_outcome": string, "mismatch": boolean, "reason": string}
 
-- summary: one line, max 25 words. Who, where the call ended, the next step. If the prospect stated a need, keep their key words in quotes. Use only facts in the record; never invent.
+- summary: one line, max 25 words: who, where the call ended, and the next step exactly as recorded (channel and time). If the prospect stated a need, add it as a separate clause in their own quoted words. Never connect the need to the next step or add a purpose nobody stated.
 - suggested_outcome: the allowed outcome that best fits the record.
 - mismatch: true only if the logged outcome clearly contradicts the record.
 - reason: one short sentence explaining the mismatch, or "" if none.`;
